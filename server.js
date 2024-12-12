@@ -16,5 +16,5 @@ app.get("/", (req,res) => {
 })
 
 app.listen(8800, () => {
-  console.log("Connected to Backend. Keep moving forward");
+  console.log("Connected to Backend. Keep moving forward http://localhost:8800");
 })
