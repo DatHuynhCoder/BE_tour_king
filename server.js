@@ -40,7 +40,7 @@ function authenToken(req, res, next) {
   })
 }
 
-app.get("/", (req,res) => {
+app.get("/", (req, res) => {
   return res.json("Hello backend")
 })
 
@@ -63,10 +63,10 @@ app.post('/register', (req, res) => {
 app.post('/login', (req, res) => {
   const sql = 'select * from nguoidung where Email = ?'
   db.query(sql, [req.body.email], (err, data) => {
-    if (err) return res.json({Status: 'Error', Error: 'Login error in server' })
+    if (err) return res.json({ Status: 'Error', Error: 'Login error in server' })
     if (data.length > 0) { // có người dùng với email này
       bcrypt.compare(req.body.password.toString(), data[0].MatKhau, (err, response) => {
-        if (err) return res.json({Status: 'Error', Error: 'Password compare error' })
+        if (err) return res.json({ Status: 'Error', Error: 'Password compare error' })
         if (response) {
           const userid = data[0].MaNguoiDung
           const name = data[0].TenDayDu // có nguy cơ lỗi
@@ -93,14 +93,14 @@ app.post('/login', (req, res) => {
         }
       })
     } else {
-      return res.json({Status: 'Error', Error: 'Không tồn tại người dùng với email này !' })
+      return res.json({ Status: 'Error', Error: 'Không tồn tại người dùng với email này !' })
     }
   })
 })
 //Lấy user theo email
 app.get('/get-user-by-email', (req, res) => {
   console.log('call me get-user-by-email')
-  const {email} = req.query
+  const { email } = req.query
   const sql = "SELECT * FROM nguoidung where Email = ?";
   db.query(sql, [email], (err, result) => {
     if (err) return res.json({ Status: 'Error', Error: err });
@@ -135,13 +135,13 @@ app.post('/send-recovery-email', async (req, res) => {
     console.log('Email sent: ' + info);
   }
   catch (err) {
-    return res.json({Status: 'Error', Error: err})
+    return res.json({ Status: 'Error', Error: err })
   }
-  return res.json({Status: 'Success'})
+  return res.json({ Status: 'Success' })
 })
 app.post('/update-password-by-email', (req, res) => {
   console.log('call me update password-by-email')
-  const {resetEmail, password} = req.body
+  const { resetEmail, password } = req.body
   console.log('check resetEmail and password: ', resetEmail, password) //check resetEmail and password:  huynhanh.170504@gmail.com 321
   const sql = `
     update nguoidung
@@ -158,7 +158,7 @@ app.post('/update-password-by-email', (req, res) => {
 })
 app.get("/get-flight-by-airline", (req, res) => {
   console.log('call me get-flight-by-airline')
-  const {destination, airline} = req.query
+  const { destination, airline } = req.query
   const sql = `
     SELECT * 
     FROM CHUYENBAY CB 
@@ -168,9 +168,30 @@ app.get("/get-flight-by-airline", (req, res) => {
   `
   // const sql = 'select * from nguoidung'
   db.query(sql, [destination, airline], (err, result) => {
-    if(err) return res.json({Status: 'Error', Error: err})
+    if (err) return res.json({ Status: 'Error', Error: err })
     console.log(result)
     return res.json(result)
+  })
+})
+
+//Lấy hết data vé máy bay
+app.get("/get-all-ticket-info", (req, res) => {
+  console.log('Ready to get all ticket info!!!');
+  const sql = `
+  SELECT *, DDXP.MaDiaDiem as maddxp, DDXP.TenDiaDiem as tenddxp, DDXP.TenSanBay as tensbxp,  DDD.MaDiaDiem as maddden, DDD.TenDiaDiem as tenddden, DDD.TenSanBay as tensbden
+  FROM VE V JOIN CHUYENBAY CB ON V.MaChuyenBay = CB.MaChuyenBay 
+  JOIN LOAIGHE LG on V.MaLoaiGhe = LG.MaLoaiGhe 
+  JOIN HANG H ON CB.MaHang = H.MaHang
+  JOIN DIADIEM DDXP ON CB.MaDiemXuatPhat = DDXP.MaDiaDiem
+  JOIN DIADIEM DDD ON CB.MaDiemDen = DDD.MaDiaDiem
+  JOIN MAYBAY MB ON CB.SoHieuMayBay = MB.SoHieuMayBay
+  JOIN loaimaybay LMB ON MB.MaLoaiMayBay = LMB.MaLoaiMayBay
+  `
+
+  db.query(sql, (err,result) => {
+    if (err) return res.json({ Status: 'Error', Error: err })
+    console.log(result);
+    return res.json(result);
   })
 })
 
