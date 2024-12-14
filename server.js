@@ -46,17 +46,26 @@ app.get("/", (req, res) => {
 
 app.post('/register', (req, res) => {
   console.log('call me register')
-  const sql = 'insert into nguoidung(Email, Matkhau) values (?)'
-  bcrypt.hash(req.body.password.toString(), salt, (err, hash) => {
-    if (err) return res.json({ Error: 'error for hashing password' })
-    const values = [
-      req.body.email,
-      hash,
-    ]
-    db.query(sql, [values], (err, result) => {
-      if (err) return res.json({ Status: 'Error', Error: err })
-      return res.json({ Status: 'Success' })
-    })
+  const sql_check_if_exist = `select * from nguoidung where Email = ?`
+  db.query(sql_check_if_exist, [req.body.email], (err, check_result) => {
+    if(err) return res.json({Status: 'Error', Error: err})
+    if(check_result.length > 0) { // có người dùng với email này
+      return res.json({Status: 'Error', Error: 'Email này đã được đăng ký'})      
+    }
+    else {
+      const sql = 'insert into nguoidung(Email, Matkhau) values (?)'
+      bcrypt.hash(req.body.password.toString(), salt, (err, hash) => {
+        if (err) return res.json({ Error: 'error for hashing password' })
+        const values = [
+          req.body.email,
+          hash,
+        ]
+        db.query(sql, [values], (err, result) => {
+          if (err) return res.json({ Status: 'Error', Error: err })
+          return res.json({ Status: 'Success' })
+        })
+      })
+    }
   })
 })
 
