@@ -249,6 +249,7 @@ app.get("/get-all-flight-with-condition", (req, res) => {
   })
 })
 
+
 //Lấy user với id
 app.get('/get-user-by-id', (req, res) => {
   const { userid } = req.query;
@@ -320,6 +321,67 @@ app.put('/update-user-info', (req, res) => {
     }
 
     return res.status(200).json({ message: 'User updated successfully' });
+      })
+})
+
+app.get("/get-all-tickets-by-MCB-and-MLG", (req, res) => {
+  const {machuyenbay, maloaighe} = req.query
+  const sql = `
+    SELECT *
+    FROM VE 
+    WHERE MaChuyenBay = ? AND MaLoaiGhe =? AND DaBan = 0
+  `
+  db.query(sql, [machuyenbay, maloaighe], (err, result) => {
+    if(err) return res.json({Status: 'Error', Error: err})
+    return res.json(result)
+  })
+})
+
+app.post('/add-ctdv', (req, res) => {
+  console.log('call me add-ctdv')
+  const {
+    MaNguoiDung,
+    MaVe,
+    TenDayDu,
+    SDT,
+    QuocTich,
+    MaHoChieu,
+    NgaySinh,
+    NgayMua,
+    TinhTrang} = req.body
+  const values = [
+    MaNguoiDung,
+    MaVe,
+    TenDayDu,
+    SDT,
+    QuocTich,
+    MaHoChieu,
+    NgaySinh,
+    NgayMua,
+    TinhTrang
+  ]
+  console.log('check req.body: ', values)
+  const sql = `
+    insert into chitietdatve(MaNguoiDung,MaVe,TenDayDu,SDT,QuocTich,MaHoChieu,NgaySinh,NgayMua,
+    TinhTrang) value (?)
+  `
+  const sql_update_ticket = `
+    update ve
+    set DaBan = 1
+    where MaVe = ?
+  `
+  db.query(sql, [values], (err, result) => {
+    if(err) {
+      console.log('Lỗi: ', err)
+      return res.json({Status: 'Error', Error: err})
+    }
+    db.query(sql_update_ticket, [MaVe], (update_err, update_result) => {
+      if(update_err) {
+        console.log('Lỗi: ', err)
+        return res.json({Status: 'Error', Error: update_err})
+      }
+      return res.json({Status: 'Success'})
+    })
   })
 })
 
