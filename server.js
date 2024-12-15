@@ -204,6 +204,44 @@ app.get("/get-all-ticket-info", (req, res) => {
   })
 })
 
+app.get("/get-all-flight", (req, res) => {
+  const sql = `
+    SELECT *, DDXP.MaDiaDiem as maddxp, DDXP.TenDiaDiem as tenddxp, DDXP.TenSanBay as tensbxp,  DDD.MaDiaDiem as maddden, DDD.TenDiaDiem as tenddden, DDD.TenSanBay as tensbden
+    FROM VE V JOIN CHUYENBAY CB ON V.MaChuyenBay = CB.MaChuyenBay 
+    JOIN LOAIGHE LG on V.MaLoaiGhe = LG.MaLoaiGhe 
+    JOIN HANG H ON CB.MaHang = H.MaHang
+    JOIN DIADIEM DDXP ON CB.MaDiemXuatPhat = DDXP.MaDiaDiem
+    JOIN DIADIEM DDD ON CB.MaDiemDen = DDD.MaDiaDiem
+    JOIN MAYBAY MB ON CB.SoHieuMayBay = MB.SoHieuMayBay
+    JOIN loaimaybay LMB ON MB.MaLoaiMayBay = LMB.MaLoaiMayBay
+    GROUP BY CB.MaChuyenBay, LG.MaLoaiGhe
+  `
+  db.query(sql, (err, result) => {
+    if(err) return res.json({Status: 'Error', Error: err})
+    return res.json(result)
+  })
+})
+
+app.get("/get-all-flight-with-condition", (req, res) => {
+  const {mahang, madiemxp, madiemden} = req.query
+  const sql = `
+    SELECT *, DDXP.MaDiaDiem as maddxp, DDXP.TenDiaDiem as tenddxp, DDXP.TenSanBay as tensbxp,  DDD.MaDiaDiem as maddden, DDD.TenDiaDiem as tenddden, DDD.TenSanBay as tensbden
+    FROM VE V JOIN CHUYENBAY CB ON V.MaChuyenBay = CB.MaChuyenBay 
+    JOIN LOAIGHE LG on V.MaLoaiGhe = LG.MaLoaiGhe 
+    JOIN HANG H ON CB.MaHang = H.MaHang
+    JOIN DIADIEM DDXP ON CB.MaDiemXuatPhat = DDXP.MaDiaDiem
+    JOIN DIADIEM DDD ON CB.MaDiemDen = DDD.MaDiaDiem
+    JOIN MAYBAY MB ON CB.SoHieuMayBay = MB.SoHieuMayBay
+    JOIN loaimaybay LMB ON MB.MaLoaiMayBay = LMB.MaLoaiMayBay
+    WHERE H.MaHang = ? AND DDXP.MaDiaDiem = ? AND DDD.MaDiaDiem = ?
+    GROUP BY CB.MaChuyenBay, LG.MaLoaiGhe
+  `
+  db.query(sql, [mahang, madiemxp, madiemden], (err, result) => {
+    if(err) return res.json({Status: 'Error', Error: err})
+    return res.json(result)
+  })
+})
+
 app.listen(8800, () => {
   console.log("Connected to Backend. Keep moving forward http://localhost:8800");
 })
