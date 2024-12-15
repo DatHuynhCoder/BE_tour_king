@@ -8,6 +8,9 @@ import axios from 'axios'
 import CryptoJS from 'crypto-js'
 import nodemailer from 'nodemailer'
 import cookieParser from 'cookie-parser'
+import { fileURLToPath } from 'url';
+import multer from "multer";
+import path from 'path';
 
 dotenv.config()
 
@@ -18,6 +21,9 @@ const app = express()
 app.use(express.json())
 app.use(cors())
 app.use(cookieParser())
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 //Kết nối tới database crud trên MySQL mở bằng Xampp
 const db = mysql.createConnection({
@@ -48,9 +54,9 @@ app.post('/register', (req, res) => {
   console.log('call me register')
   const sql_check_if_exist = `select * from nguoidung where Email = ?`
   db.query(sql_check_if_exist, [req.body.email], (err, check_result) => {
-    if(err) return res.json({Status: 'Error', Error: err})
-    if(check_result.length > 0) { // có người dùng với email này
-      return res.json({Status: 'Error', Error: 'Email này đã được đăng ký'})      
+    if (err) return res.json({ Status: 'Error', Error: err })
+    if (check_result.length > 0) { // có người dùng với email này
+      return res.json({ Status: 'Error', Error: 'Email này đã được đăng ký' })
     }
     else {
       const sql = 'insert into nguoidung(Email, Matkhau) values (?)'
@@ -197,7 +203,7 @@ app.get("/get-all-ticket-info", (req, res) => {
   JOIN loaimaybay LMB ON MB.MaLoaiMayBay = LMB.MaLoaiMayBay
   `
 
-  db.query(sql, (err,result) => {
+  db.query(sql, (err, result) => {
     if (err) return res.json({ Status: 'Error', Error: err })
     console.log(result);
     return res.json(result);
@@ -217,13 +223,13 @@ app.get("/get-all-flight", (req, res) => {
     GROUP BY CB.MaChuyenBay, LG.MaLoaiGhe
   `
   db.query(sql, (err, result) => {
-    if(err) return res.json({Status: 'Error', Error: err})
+    if (err) return res.json({ Status: 'Error', Error: err })
     return res.json(result)
   })
 })
 
 app.get("/get-all-flight-with-condition", (req, res) => {
-  const {mahang, madiemxp, madiemden} = req.query
+  const { mahang, madiemxp, madiemden } = req.query
   console.log('call me get-all-flight-with-condition: ', mahang, madiemxp, madiemden)
   const sql = `
     SELECT *, DDXP.MaDiaDiem as maddxp, DDXP.TenDiaDiem as tenddxp, DDXP.TenSanBay as tensbxp,  DDD.MaDiaDiem as maddden, DDD.TenDiaDiem as tenddden, DDD.TenSanBay as tensbden
@@ -238,9 +244,84 @@ app.get("/get-all-flight-with-condition", (req, res) => {
     GROUP BY CB.MaChuyenBay, LG.MaLoaiGhe
   `
   db.query(sql, [mahang, madiemxp, madiemden], (err, result) => {
-    if(err) return res.json({Status: 'Error', Error: err})
+    if (err) return res.json({ Status: 'Error', Error: err })
     return res.json(result)
   })
+})
+
+
+//Lấy user với id
+app.get('/get-user-by-id', (req, res) => {
+  const { userid } = req.query;
+  const sql = "SELECT * FROM nguoidung WHERE MaNguoiDung = ?";
+  db.query(sql, [userid], (err, result) => {
+    if (err) return res.json({ Message: 'Error for getting user by id' });
+    else return res.json(result);
+  })
+})
+
+//DÙNG MULTER CHO AVATAR USER
+//Tạo nơi chứa ảnh (uploads)
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = `${Date.now()}-${file.originalname}`; // Đặt tên tệp duy nhất
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({
+  storage: storage
+});
+
+
+app.post('/upload-avatar', upload.single('avatar'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded!');
+  }
+  const fileUrl = `http://localhost:8800/uploads/${req.file.filename}`;
+  res.status(200).json({ avatarUrl: fileUrl });
+});
+
+
+app.use('/uploads', express.static('uploads'));
+
+//Cập nhật giá trị mới cho user
+app.put('/update-user-info', (req, res) => {
+  const {
+    userid,
+    userFullname,
+    userPhone,
+    userNation,
+    userBirthday,
+    userPassPort,
+    useravatarurl
+  } = req.body;
+  const sql = `
+    UPDATE nguoidung
+    SET
+      TenDayDu = ?,
+      SDT = ?,
+      QuocTich = ?,
+      NgaySinh = ?,
+      MaHoChieu = ?,
+      Avatar = ?
+    WHERE MaNguoiDung = ?
+  `;
+  db.query(sql, [userFullname, userPhone, userNation, userBirthday ,userPassPort, useravatarurl, userid], (err, result) => {
+    if (err) {
+      console.error('Error updating user info:', err);
+      return res.status(500).json({ error: 'Server error while updating user info' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    return res.status(200).json({ message: 'User updated successfully' });
+      })
 })
 
 app.get("/get-all-tickets-by-MCB-and-MLG", (req, res) => {
