@@ -310,7 +310,7 @@ app.put('/update-user-info', (req, res) => {
       Avatar = ?
     WHERE MaNguoiDung = ?
   `;
-  db.query(sql, [userFullname, userPhone, userNation, userBirthday ,userPassPort, useravatarurl, userid], (err, result) => {
+  db.query(sql, [userFullname, userPhone, userNation, userBirthday, userPassPort, useravatarurl, userid], (err, result) => {
     if (err) {
       console.error('Error updating user info:', err);
       return res.status(500).json({ error: 'Server error while updating user info' });
@@ -321,18 +321,18 @@ app.put('/update-user-info', (req, res) => {
     }
 
     return res.status(200).json({ message: 'User updated successfully' });
-      })
+  })
 })
 
 app.get("/get-all-tickets-by-MCB-and-MLG", (req, res) => {
-  const {machuyenbay, maloaighe} = req.query
+  const { machuyenbay, maloaighe } = req.query
   const sql = `
     SELECT *
     FROM VE 
     WHERE MaChuyenBay = ? AND MaLoaiGhe =? AND DaBan = 0
   `
   db.query(sql, [machuyenbay, maloaighe], (err, result) => {
-    if(err) return res.json({Status: 'Error', Error: err})
+    if (err) return res.json({ Status: 'Error', Error: err })
     return res.json(result)
   })
 })
@@ -348,7 +348,7 @@ app.post('/add-ctdv', (req, res) => {
     MaHoChieu,
     NgaySinh,
     NgayMua,
-    TinhTrang} = req.body
+    TinhTrang } = req.body
   const values = [
     MaNguoiDung,
     MaVe,
@@ -371,17 +371,33 @@ app.post('/add-ctdv', (req, res) => {
     where MaVe = ?
   `
   db.query(sql, [values], (err, result) => {
-    if(err) {
+    if (err) {
       console.log('Lỗi: ', err)
-      return res.json({Status: 'Error', Error: err})
+      return res.json({ Status: 'Error', Error: err })
     }
     db.query(sql_update_ticket, [MaVe], (update_err, update_result) => {
-      if(update_err) {
+      if (update_err) {
         console.log('Lỗi: ', err)
-        return res.json({Status: 'Error', Error: update_err})
+        return res.json({ Status: 'Error', Error: update_err })
       }
-      return res.json({Status: 'Success'})
+      return res.json({ Status: 'Success' })
     })
+  })
+})
+
+app.get('/get-chititetdatve-by-user-id', (req, res) => {
+  const { userid } = req.query;
+  const sql = `
+  SELECT * , DDXP.MaDiaDiem AS MXP, DDXP.TenDiaDiem AS TXP, DDXP.TenSanBay AS SBXP, DDD.MaDiaDiem AS MD, DDD.TenDiaDiem AS TD, DDD.TenSanBay AS SBD
+  FROM ChitietDatVe AS CTDV JOIN VE AS V 
+  ON CTDV.Mave = V.MaVe JOIN ChuyenBay AS CB
+  ON V.MaChuyenBay = CB.MaChuyenBay JOIN diadiem AS DDXP
+  ON CB.MaDiemXuatPhat = DDXP.MaDiaDiem JOIN diadiem AS DDD 
+  ON CB.MaDiemDen = DDD.MaDiaDiem JOIN LoaiGhe as LG ON LG.MALOAIGHE = V.MALOAIGHE
+  Where CTDV.MaNguoiDung = ?`;
+  db.query(sql, [userid], (err, result) => {
+    if (err) return res.json({ Message: 'Error for getting chitietdatve by user id' });
+    else return res.json(result);
   })
 })
 
