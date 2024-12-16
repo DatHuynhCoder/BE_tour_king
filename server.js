@@ -401,6 +401,23 @@ app.get('/get-chititetdatve-by-user-id', (req, res) => {
   })
 })
 
+app.put('/update-chitietdatve-to-CXL', (req, res) => {
+  const { ID_ChitietDatVe } = req.body;
+  const sql = `UPDATE chitietdatve set TinhTrang = 'CXL' WHERE ID_ChitietDatVe = ?`;
+  db.query(sql, [ID_ChitietDatVe], (err, result) => {
+    if (err) {
+      console.error('Error updating trang thai:', err);
+      return res.status(500).json({ error: 'Server error while updating user info' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Chi tiet dat ve not found' });
+    }
+
+    return res.status(200).json({ message: 'Trang thai updated successfully' });
+  })
+})
+
 app.listen(8800, () => {
   console.log("Connected to Backend. Keep moving forward http://localhost:8800");
 })
