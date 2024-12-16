@@ -252,14 +252,48 @@ app.get("/get-all-flight-with-condition", (req, res) => {
 
 //Lấy user với id
 app.get('/get-user-by-id', (req, res) => {
+  console.log('call me get-user-by-id')
   const { userid } = req.query;
+  console.log('check userid: ', userid)
   const sql = "SELECT * FROM nguoidung WHERE MaNguoiDung = ?";
   db.query(sql, [userid], (err, result) => {
-    if (err) return res.json({ Message: 'Error for getting user by id' });
-    else return res.json(result);
+    if (err) {
+      console.log('Error: ', err)
+      return res.json({ Message: 'Error for getting user by id' });
+    }
+    else {
+      console.log('User: ', result)
+      return res.json(result);
+    }
   })
 })
-
+app.get('/get-all-user', (req, res) => {
+  const sql = `
+    select * from nguoidung
+  `
+  db.query(sql, (err, result) => {
+    if(err) {
+      console.log('Error in get all user: ', err);
+      return res.json({Status: 'Error', Error: err})
+    }
+    return res.json(result)
+  })
+})
+app.post('/ban-user-by-id', (req, res) => {
+  const {MaNguoiDung, BiCam} = req.body
+  const sql = `
+    update nguoidung
+    set BiCam = ?
+    where MaNguoiDung = ?
+  `
+  db.query(sql, [BiCam, MaNguoiDung], (err, result) => {
+    if(err) {
+      console.log('Error in ban user: ', err)
+      return res.json({Status: 'Error', Error: err})
+    }
+    return res.json({Status: 'Success'})
+  })
+})
 //DÙNG MULTER CHO AVATAR USER
 //Tạo nơi chứa ảnh (uploads)
 const storage = multer.diskStorage({
@@ -382,6 +416,36 @@ app.post('/add-ctdv', (req, res) => {
       }
       return res.json({Status: 'Success'})
     })
+  })
+})
+
+app.get('/get-all-ctdv-with-condition', (req, res) => {
+  const sql = `
+    select * from chitietdatve 
+    where TinhTrang = 'CXL' or TinhTrang = 'DH'
+  `
+  db.query(sql, (err, result) => {
+    if(err) {
+      console.log('Error in get all ctdv with condition: ', err)
+      return res.json({Status: 'Error', Error: err})
+    }
+    return res.json(result)
+  })
+})
+
+app.post('/update-ctdv', (req, res) => {
+  const {ID_ChitietDatVe, TinhTrang} = req.body
+  const sql = `
+    update chitietdatve
+    set TinhTrang = ?
+    where ID_ChitietDatVe = ?
+  `
+  db.query(sql, [TinhTrang, ID_ChitietDatVe], (err, result) => {
+    if(err) {
+      console.log('Error while update ctdv: ', err)
+      return res.json({Status: 'Error', Error: err})
+    }
+    return res.json({Status: 'Success'})
   })
 })
 
