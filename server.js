@@ -479,6 +479,24 @@ app.post('/update-ctdv', (req, res) => {
     return res.json({Status: 'Success'})
   })
 })
+
+app.get('/get-income-by-day', (req, res) => {
+  const sql = `
+    SELECT NGAYMUA as NgayMua, SUM(V.GIA) as ThuNhap
+    FROM chitietdatve AS CTDV 
+    JOIN VE AS V ON CTDV.MaVe = V.MaVe 
+    GROUP BY NGAYMUA 
+    ORDER BY NGAYMUA DESC;
+  `
+  db.query(sql, (err, result) => {
+    if(err) {
+      console.log('Error while get income for chart: ', err)
+      return res.json({Status: 'Error', Error: err})
+    }
+    return res.json(result)
+  })
+})
+
 app.listen(8800, () => {
   console.log("Connected to Backend. Keep moving forward http://localhost:8800");
 })
