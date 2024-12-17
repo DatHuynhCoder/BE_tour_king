@@ -497,6 +497,41 @@ app.get('/get-income-by-day', (req, res) => {
   })
 })
 
+app.post('/add-comment', (req, res) => {
+  const {MaNguoiDung, NoiDung, NgayBinhLuan} = req.body
+  const sql = `
+    insert into binhluan (MaNguoiDung, NoiDung, NgayBinhLuan) values (?)
+  `
+  const values = [
+    MaNguoiDung, 
+    NoiDung, 
+    NgayBinhLuan
+  ]
+  db.query(sql, [values], (err, result) => {
+    if(err) {
+      console.log('Error: ', err)
+      return res.json({Status: 'Error', Error: err})
+    }
+    return res.json({Status: 'Success'})
+  })
+})
+
+app.get('/get-comment', (req, res) => {
+  const sql = `
+    SELECT * 
+    FROM binhluan bl 
+    join nguoidung nd on bl.MaNguoiDung = nd.MaNguoiDung 
+    limit 10
+  `
+  db.query(sql, (err, result) => {
+    if(err) {
+      console.log("Error while getting comment: ", err)
+      return res.json({Status: 'Error', Error: err})
+    }
+    return res.json(result)
+  })
+})
+
 app.listen(8800, () => {
   console.log("Connected to Backend. Keep moving forward http://localhost:8800");
 })
