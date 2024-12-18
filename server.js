@@ -76,7 +76,7 @@ app.post('/register', (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-  const sql = 'select * from nguoidung where Email = ?'
+  const sql = 'select * from nguoidung where Email = ? and BiCam = 0'
   db.query(sql, [req.body.email], (err, data) => {
     if (err) return res.json({ Status: 'Error', Error: 'Login error in server' })
     if (data.length > 0) { // có người dùng với email này
@@ -108,7 +108,7 @@ app.post('/login', (req, res) => {
         }
       })
     } else {
-      return res.json({ Status: 'Error', Error: 'Không tồn tại người dùng với email này !' })
+      return res.json({ Status: 'Error', Error: 'Không tồn tại người dùng với email này hoặc đã bị cấm !' })
     }
   })
 })
@@ -526,6 +526,27 @@ app.get('/get-comment', (req, res) => {
   db.query(sql, (err, result) => {
     if(err) {
       console.log("Error while getting comment: ", err)
+      return res.json({Status: 'Error', Error: err})
+    }
+    return res.json(result)
+  })
+})
+
+app.get('/get-number-ticket-in-month-by-airline', (req, res) => {
+  const {Month} = req.query
+  const sql = `
+    SELECT H.TENHANG,count(CTDV.mave) as SOVE
+    FROM VE AS V 
+    JOIN CHUYENBAY AS CB ON V.MaChuyenBay = CB.MaChuyenBay 
+    JOIN HANG AS H ON H.MaHang = CB.MaHang 
+    JOIN chitietdatve AS CTDV ON V.MaVe = CTDV.MaVe 
+    WHERE V.DaBan = 1 AND month(NgayMua) = ? 
+    GROUP BY H.MaHang 
+    ORDER BY count(CTDV.mave) DESC;
+  `
+  db.query(sql, [Month], (err, result) => {
+    if(err) {
+      console.log("Error in get-number-ticket-in-month-by-airline: ", err)
       return res.json({Status: 'Error', Error: err})
     }
     return res.json(result)
